@@ -21,26 +21,25 @@ def initialization():
     return jira
 
 
-def import_main_geometry_dimmension():
+def import_main_geometry_dimension():
     with open("configuration.json", "r") as data_file:
         data = json.load(data_file)
-        main_geometry_dimmension = data["body_configuration"]["main_window"]["geometry"]["width"] + \
+        main_geometry_dimension = data["body_configuration"]["main_window"]["geometry"]["width"] + \
                                    "x" + \
                                    data["body_configuration"]["main_window"]["geometry"]["height"]
-    return main_geometry_dimmension
+    return main_geometry_dimension
 
 
 def import_main_geometry_title():
     with open("configuration.json", "r") as data_file:
         data = json.load(data_file)
         title = data["body_configuration"]["main_window"]["title"]
-        print("Title is:", title)
         return title
 
 
 def main_tk_obj(root):
     # print(import_main_geometry_dimmension())
-    root.geometry(import_main_geometry_dimmension())
+    root.geometry(import_main_geometry_dimension())
     root.title(import_main_geometry_title())
     return root
 
