@@ -8,9 +8,10 @@
       }
     }
   },
-   "button_configuration":{
-      "height":32,
-      "width":32,
-      "default_colour":"white"
+   "button_configuration": {
+     "height": 32,
+     "width": 32,
+     "text_colour": "black",
+     "background_colour": "white"
    }
 }
