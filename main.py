@@ -1,77 +1,141 @@
 from jira import JIRA
 from tkinter import *
+from tkinter import messagebox
 from prettytable import PrettyTable
+import xlwt
+import json
 
 
-class Extractor:
-    def __init__(self, master):
-        self.master = master
-        self.jira = self.initialization()
-        self.create_widgets()
-        self.jql = None
-        self.project_name = None
-        self.component = None
-
-    @staticmethod
-    def initialization():
-        jira = JIRA(basic_auth=('username', 'password'), options={'server': 'https://jira.organization.ro'})
-        return jira
-
-    def create_widgets(self):
-        self.master.geometry("500x400")
-        self.master.title("Search details")
-
-        self.label_0 = Label(self.master, text="Data Extraction", width=20, font=("bold", 20))
-        self.label_0.place(x=90, y=53)
-        self.label_1 = Label(self.master, text="Project Name", width=20, font=("bold", 10))
-        self.label_1.place(x=80, y=130)
-        self. entry_1 = Entry(self.master)
-        self.entry_1.place(x=240, y=130)
-        self.label_2 = Label(self.master, text="Component", width=20, font=("bold", 10))
-        self. label_2.place(x=80, y=180)
-        self.entry_2 = Entry(self.master)
-        self.entry_2.place(x=240, y=180)
-        Button(self.master, text="Extract", width=20, bg="blue", fg="white", command=self.get_ticket_list).place(x=180, y=280)
-        Button(self.master, text="Quit", width=10, bg="brown", fg="white", command=self.master.destroy).place(x=220, y=310)
-
-    def get_input(self):
-        self.project_name = self.entry_1.get()
-        self.component = self.entry_2.get()
-
-    def create_jql(self):
-        print(self.get_input)
-        self.jql = "project='%s' and component='%s'" % (self.project_name, self.component)
-
-    def get_list_of_comments(self, key):
-        list_of_comments = []
-        comments = self.jira.comments(key)
-        a = int(0)
-        for i in comments:
-            if int(i.id) > a:
-                a = int(i.id)
-                list_of_comments.append(self.jira.comment(key, a).body)
-        return list_of_comments
-
-    @staticmethod
-    def draw_table(lista):
-        table = PrettyTable()
-        table.field_names = ["Issue key", "Issue ID", "Reporter", "Status", "Priority"]
-        for i in lista:
-            key = str(i.key)
-            id = str(i.id)
-            reporter = str(i.fields.reporter)
-            status = str(i.fields.status)
-            priority = str(i.fields.priority)
-            table.add_row([key, id, reporter, status, priority])
-        print(table)
-
-    def get_ticket_list(self):
-        self.get_input()
-        self.create_jql()
-        ticket_list = self.jira.search_issues(self.jql, maxResults=10)
-        self.draw_table(ticket_list)
+def import_auth_data():
+    with open("auth_data.json", "r") as data_file:
+        return json.load(data_file)
 
 
-master = Tk()
-b = Extractor(master)
-master.mainloop()
+def initialization():
+    # Imports auth data from auth_data.json
+    jira_auth_object = import_auth_data()
+    # main jira object
+    global jira
+    jira = JIRA(basic_auth=(jira_auth_object["username"],
+                            jira_auth_object["password"]),
+                options={'server': jira_auth_object["jira_server"]})
+    return jira
+
+
+def import_main_geometry_dimension():
+    with open("configuration.json", "r") as data_file:
+        data = json.load(data_file)
+        main_geometry_dimension = data["body_configuration"]["main_window"]["geometry"]["width"] + \
+                                   "x" + \
+                                   data["body_configuration"]["main_window"]["geometry"]["height"]
+    return main_geometry_dimension
+
+
+def import_main_geometry_title():
+    with open("configuration.json", "r") as data_file:
+        data = json.load(data_file)
+        title = data["body_configuration"]["main_window"]["title"]
+        return title
+
+
+def main_tk_obj(root):
+    # print(import_main_geometry_dimmension())
+    root.geometry(import_main_geometry_dimension())
+    root.title(import_main_geometry_title())
+    return root
+
+
+def create_title_label(root, name, x , y):
+    label = Label(root, text=name, width=20, font=("bold", 20))
+    label.place(x=x, y=y)
+
+
+def create_label_text(root, name, x, y):
+    label = Label(root, text=name, width=20, font=("bold", 10))
+    label.place(x=x, y=y)
+
+
+def create_label_entry(root, x, y):
+    global entry
+    entry = Entry(root)
+    entry.place(x=x, y=y)
+    return entry
+
+
+def create_button(root, name, width, bg, fg, command, x, y):
+    Button(root, text=name, width=width, bg=bg, fg=fg, command=command).place(x=x, y=y)
+
+
+def store_input():
+    data = entry.get()
+    return data
+
+
+def create_jql(data):
+    jql = "project='%s' and component='%s'" % ("NOKSUPP", data)
+    return jql
+
+
+# BELOW CODE IS USED FOR DEBUG PURPOSES ONLY
+
+# def draw_table(jql):
+#     ticket_list = jira.search_issues(jql, maxResults=10)
+#     table = PrettyTable()
+#     table.field_names = ["Issue key", "Issue ID", "Reporter", "Status", "Priority"]
+#     for i in ticket_list:
+#         key = str(i.key)
+#         id = str(i.id)
+#         reporter = str(i.fields.reporter)
+#         status = str(i.fields.status)
+#         priority = str(i.fields.priority)
+#         table.add_row([key, id, reporter, status, priority])
+#     print(table)
+
+
+def write_to_file(jql):
+    wb = xlwt.Workbook()
+    ws = wb.add_sheet("Sheet 1")
+    ticket_list = jira.search_issues(jql, maxResults=10)
+    top_row = ["Issue key", "Issue ID", "Reporter", "Status", "Priority"]
+    column_counter = 1
+    for i in top_row:
+        ws.write(0, column_counter, i)
+        column_counter +=1
+    row_counter = 1
+    ticket_details = []
+    for i in ticket_list:
+        column_counter = 1
+        key = str(i.key)
+        id = str(i.id)
+        reporter = str(i.fields.reporter)
+        status = str(i.fields.status)
+        priority = str(i.fields.priority)
+        ticket_details.append([key, id, reporter, status, priority])
+        ws.write(row_counter, column_counter, key)
+        ws.write(row_counter, column_counter+1, id)
+        ws.write(row_counter, column_counter+2, reporter)
+        ws.write(row_counter, column_counter+3, status)
+        ws.write(row_counter, column_counter+4, priority)
+        row_counter += 1
+    wb.save("data.xls")
+
+
+def main():
+    component = store_input()
+    if component:
+        jql = create_jql(component)
+        write_to_file(jql)
+    else:
+        messagebox.showerror("Error", "Please fill the component box!")
+
+
+if __name__ == "__main__":
+    initialization()
+    root = Tk()
+    main_tk_obj(root)
+    create_title_label(root, "Data Extraction", 90, 53)
+    create_label_text(root, "Component", 80, 130)
+    entry = create_label_entry(root, 240, 130)
+    create_button(root, "Extract", 20, "blue", "white", main, 180, 280)
+    create_button(root, "Quit", 10, "brown", "white", root.destroy, 220, 310)
+    root.mainloop()
