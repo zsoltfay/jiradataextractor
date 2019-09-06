@@ -1,0 +1,17 @@
+{
+  "body_configuration":{
+    "main_window":{
+      "title":"Search details",
+      "geometry":{
+        "width":"900",
+        "height":"400"
+      }
+    }
+  },
+   "button_configuration": {
+     "height": 32,
+     "width": 32,
+     "text_colour": "black",
+     "background_colour": "white"
+   }
+}

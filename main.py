@@ -1,18 +1,46 @@
 from jira import JIRA
 from tkinter import *
+from tkinter import messagebox
 from prettytable import PrettyTable
+import json
+
+
+def import_auth_data():
+    with open("auth_data.json", "r") as data_file:
+        return json.load(data_file)
 
 
 def initialization():
+    # Imports auth data from auth_data.json
+    jira_auth_object = import_auth_data()
     # main jira object
     global jira
-    jira = JIRA(basic_auth=('username', 'password'), options={'server': 'https://jira.org.ro'})
+    jira = JIRA(basic_auth=(jira_auth_object["username"],
+                            jira_auth_object["password"]),
+                options={'server': jira_auth_object["jira_server"]})
     return jira
 
 
+def import_main_geometry_dimension():
+    with open("configuration.json", "r") as data_file:
+        data = json.load(data_file)
+        main_geometry_dimension = data["body_configuration"]["main_window"]["geometry"]["width"] + \
+                                   "x" + \
+                                   data["body_configuration"]["main_window"]["geometry"]["height"]
+    return main_geometry_dimension
+
+
+def import_main_geometry_title():
+    with open("configuration.json", "r") as data_file:
+        data = json.load(data_file)
+        title = data["body_configuration"]["main_window"]["title"]
+        return title
+
+
 def main_tk_obj(root):
-    root.geometry("500x400")
-    root.title("Search details")
+    # print(import_main_geometry_dimmension())
+    root.geometry(import_main_geometry_dimension())
+    root.title(import_main_geometry_title())
     return root
 
 
@@ -63,8 +91,11 @@ def draw_table(jql):
 
 def main():
     component = store_input()
-    jql = create_jql(component)
-    draw_table(jql)
+    if component:
+        jql = create_jql(component)
+        draw_table(jql)
+    else:
+        messagebox.showerror("Error", "Please fill the component box!")
 
 
 if __name__ == "__main__":
