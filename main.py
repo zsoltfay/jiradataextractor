@@ -2,6 +2,7 @@ from jira import JIRA
 from tkinter import *
 from tkinter import messagebox
 from prettytable import PrettyTable
+import xlwt
 import json
 
 
@@ -75,25 +76,55 @@ def create_jql(data):
     return jql
 
 
-def draw_table(jql):
+# BELOW CODE IS USED FOR DEBUG PURPOSES ONLY
+
+# def draw_table(jql):
+#     ticket_list = jira.search_issues(jql, maxResults=10)
+#     table = PrettyTable()
+#     table.field_names = ["Issue key", "Issue ID", "Reporter", "Status", "Priority"]
+#     for i in ticket_list:
+#         key = str(i.key)
+#         id = str(i.id)
+#         reporter = str(i.fields.reporter)
+#         status = str(i.fields.status)
+#         priority = str(i.fields.priority)
+#         table.add_row([key, id, reporter, status, priority])
+#     print(table)
+
+
+def write_to_file(jql):
+    wb = xlwt.Workbook()
+    ws = wb.add_sheet("Sheet 1")
     ticket_list = jira.search_issues(jql, maxResults=10)
-    table = PrettyTable()
-    table.field_names = ["Issue key", "Issue ID", "Reporter", "Status", "Priority"]
+    top_row = ["Issue key", "Issue ID", "Reporter", "Status", "Priority"]
+    column_counter = 1
+    for i in top_row:
+        ws.write(0, column_counter, i)
+        column_counter +=1
+    row_counter = 1
+    ticket_details = []
     for i in ticket_list:
+        column_counter = 1
         key = str(i.key)
         id = str(i.id)
         reporter = str(i.fields.reporter)
         status = str(i.fields.status)
         priority = str(i.fields.priority)
-        table.add_row([key, id, reporter, status, priority])
-    print(table)
+        ticket_details.append([key, id, reporter, status, priority])
+        ws.write(row_counter, column_counter, key)
+        ws.write(row_counter, column_counter+1, id)
+        ws.write(row_counter, column_counter+2, reporter)
+        ws.write(row_counter, column_counter+3, status)
+        ws.write(row_counter, column_counter+4, priority)
+        row_counter += 1
+    wb.save("data.xls")
 
 
 def main():
     component = store_input()
     if component:
         jql = create_jql(component)
-        draw_table(jql)
+        write_to_file(jql)
     else:
         messagebox.showerror("Error", "Please fill the component box!")
 
