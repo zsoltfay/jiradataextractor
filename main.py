@@ -2,6 +2,7 @@ from jira import JIRA
 from tkinter import *
 from tkinter import messagebox
 from prettytable import PrettyTable
+import matplotlib.pyplot as plt
 import xlwt
 import json
 
@@ -71,8 +72,8 @@ def store_input():
     return data
 
 
-def create_jql(data):
-    jql = "project='%s' and component='%s'" % ("NOKSUPP", data)
+def create_jql(data=None):
+    jql = "project='%s'" % data
     return jql
 
 
@@ -92,41 +93,56 @@ def create_jql(data):
 #     print(table)
 
 
-def write_to_file(jql):
-    wb = xlwt.Workbook()
-    ws = wb.add_sheet("Sheet 1")
-    ticket_list = jira.search_issues(jql, maxResults=10)
-    top_row = ["Issue key", "Issue ID", "Reporter", "Status", "Priority"]
-    column_counter = 1
-    for i in top_row:
-        ws.write(0, column_counter, i)
-        column_counter +=1
-    row_counter = 1
-    ticket_details = []
-    for i in ticket_list:
-        column_counter = 1
-        key = str(i.key)
-        id = str(i.id)
-        reporter = str(i.fields.reporter)
-        status = str(i.fields.status)
-        priority = str(i.fields.priority)
-        ticket_details.append([key, id, reporter, status, priority])
-        ws.write(row_counter, column_counter, key)
-        ws.write(row_counter, column_counter+1, id)
-        ws.write(row_counter, column_counter+2, reporter)
-        ws.write(row_counter, column_counter+3, status)
-        ws.write(row_counter, column_counter+4, priority)
-        row_counter += 1
-    wb.save("data.xls")
+# def write_to_file(jql):
+#     wb = xlwt.Workbook()
+#     ws = wb.add_sheet("Sheet 1")
+#     ticket_list = jira.search_issues(jql, maxResults=10)
+#     top_row = ["Issue key", "Issue ID", "Reporter", "Status", "Priority"]
+#     column_counter = 1
+#     for i in top_row:
+#         ws.write(0, column_counter, i)
+#         column_counter +=1
+#     row_counter = 1
+#     ticket_details = []
+#     for i in ticket_list:
+#         column_counter = 1
+#         key = str(i.key)
+#         id = str(i.id)
+#         reporter = str(i.fields.reporter)
+#         status = str(i.fields.status)
+#         priority = str(i.fields.priority)
+#         ticket_details.append([key, id, reporter, status, priority])
+#         ws.write(row_counter, column_counter, key)
+#         ws.write(row_counter, column_counter+1, id)
+#         ws.write(row_counter, column_counter+2, reporter)
+#         ws.write(row_counter, column_counter+3, status)
+#         ws.write(row_counter, column_counter+4, priority)
+#         row_counter += 1
+#     wb.save("data.xls")
 
 
 def main():
     component = store_input()
     if component:
         jql = create_jql(component)
-        write_to_file(jql)
+        create_pie_chart(jql)
+        # draw_table(jql)
     else:
         messagebox.showerror("Error", "Please fill the component box!")
+
+
+def create_pie_chart(jql):
+    ticket_list = jira.search_issues(jql, maxResults=200)
+    helper_list = []
+    for i in ticket_list:
+        helper_list.append(i.fields.priority.name)
+    plt.figure(figsize=(5, 5))
+    colors = ["g", "b", "m", "r", "y"]
+    explode = [0.05, 0.05, 0.05, 0.05, 0.05]
+    labels = ["Minor", "Major", "Critical", "Blocker", "Normal"]
+    values = [helper_list.count("Minor"), helper_list.count("Major"), helper_list.count("Critical"), helper_list.count("Blocker"), helper_list.count("Normal")]
+    plt.pie(values, labels=labels, autopct="%.1f%%", explode=explode, colors=colors)
+    plt.show()
 
 
 if __name__ == "__main__":
